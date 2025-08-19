@@ -31,6 +31,19 @@ A simple contact management application to:
 
 ---
 
+### 4. ⛅ Weather API App  
+
+A Python application to fetch and display real-time weather information using an external API (like OpenWeatherMap).  
+
+- Fetch live weather data (temperature, humidity, weather condition, etc.)  
+- Input city name to get current weather details  
+- Simple and user-friendly GUI using Tkinter  
+- Error handling for invalid city names or API issues  
+
+> **File:** `weather_api.py`
+
+---
+
 ## 🛠 Requirements
 
 - Python 3.x  
