@@ -1,78 +1,68 @@
 import requests
-import json
+import tkinter as tk
+from tkinter import messagebox
 
-# api and url support
-API_KEY = "7d3619b1f06955175e9534c81907cd64"  
+# API details
+API_KEY = "7d3619b1f06955175e9534c81907cd64"
 BASE_URL = "http://api.openweathermap.org/data/2.5/weather"
 
-# getting city input from user
-city = input("Enter a city name : ")
+# Function to get weather
+def get_weather():
+    city = city_entry.get().strip()
+    if not city:
+        messagebox.showwarning("Input Error", "Please enter a city name")
+        return
 
-# constructing the full API request URL
-request_url = f"{BASE_URL}?q={city}&appid={API_KEY}&units=metric"
-"""
-1. f"...": The f at the beginning tells Python that this is a formatted string, which means any variables inside curly braces {} should be replaced with their 
-actual values.
+    request_url = f"{BASE_URL}?q={city}&appid={API_KEY}&units=metric"
 
-2. {BASE_URL}: This is the first part of the URL. The code replaces {BASE_URL} with the value of the BASE_URL variable, which is 
-"http://api.openweathermap.org/data/2.5/weather". This is the fundamental endpoint for getting current weather data.
+    try:
+        response = requests.get(request_url)
+        response.raise_for_status()
+        data = response.json()
 
-3. ?: The question mark is a standard part of URLs. It separates the main URL from the query parameters that follow. Query parameters are used to send specific 
-information to the server.
+        # Extract details
+        weather_description = data['weather'][0]['description']
+        temperature = data['main']['temp']
+        humidity = data['main']['humidity']
+        wind_speed = data['wind']['speed']
+        wind_direction = data['wind']['deg']
+        visibility = data['visibility']
 
-4. q={city}: This is the first query parameter, q stands for "query." For the OpenWeatherMap API, it's used to specify the location you want weather for.
-{city} is replaced by whatever the user typed in and was stored in the city variable (e.g., "London").So, this part becomes q=London.
+        # Update result label
+        result_text.set(
+            f"Weather Report for {city.capitalize()}:\n"
+            f"------------------------------\n"
+            f"Description:   {weather_description.capitalize()}\n"
+            f"Temperature:   {temperature}°C\n"
+            f"Humidity:      {humidity}%\n"
+            f"Wind:          {round(wind_speed * 18/5, 2)} km/hr at {wind_direction}°\n"
+            f"Visibility:    {visibility / 1000} km\n"
+            f"------------------------------"
+        )
 
-5. &: The ampersand is used to separate multiple query parameters from each other.
+    except requests.exceptions.RequestException as e:
+        messagebox.showerror("Error", f"Network error: {e}")
 
-6. appid={API_KEY}: This is the second query parameter, required for authentication, appid stands for "Application ID." {API_KEY} is replaced by the value of your 
-API_KEY variable. This tells the server who is making the request.
+    except KeyError:
+        messagebox.showerror("Error", "City not found! Please check spelling.")
 
-7. &units=metric: This is the third query parameter, units specifies the unit system for the results, By setting it to metric, you're asking the API to return the 
-temperature in Celsius, wind speed in meters per second.
-"""
+# --- GUI Setup ---
+root = tk.Tk()
+root.title("Weather App")
+root.geometry("400x400")
+root.config(bg="#f0f0f0")
 
-try:
-    response = requests.get(request_url)
-    response.raise_for_status()  # Raises an HTTPError for bad responses (4xx or 5xx)
+# Input
+tk.Label(root, text="Enter City Name:", font=("Arial", 12), bg="#f0f0f0").pack(pady=10)
+city_entry = tk.Entry(root, font=("Arial", 12), width=25, justify="center")
+city_entry.pack(pady=5)
 
-    # The response from the API is in JSON format. We need to parse it into a Python dictionary.
-    # data is now dictionary
-    data = response.json()
+# Button
+tk.Button(root, text="Get Weather", font=("Arial", 12, "bold"), bg="#4CAF50", fg="white", command=get_weather).pack(pady=10)
 
-    # Extract the relevant weather information, JSON response.
-    weather_description = data['weather'][0]['description']
+# Result area
+result_text = tk.StringVar()
+result_label = tk.Label(root, textvariable=result_text, font=("Arial", 11), bg="white", fg="black", relief="solid", justify="left", wraplength=350)
+result_label.pack(pady=10, padx=10, fill="both", expand=True)
 
-    temperature = data['main']['temp']
-
-    humidity = data['main']['humidity']
-
-    wind_speed = data['wind']['speed']
-    wind_direction = data['wind']['deg']  # Wind direction in degrees
-    visibility = data['visibility'] # visiblity in meters
-
-
-    # --- Display the weather information ---
-    print(f"\nWeather Report for {city.capitalize()}:")
-    print("-" * 30)
-    print(f"Description:     {weather_description.capitalize()}")
-    print(f"Temperature:     {temperature}°C")
-    print(f"Humidity:        {humidity}%")
-    print(f"Wind:            {wind_speed * 18/5} km/hr at {wind_direction}°")
-    print(f"Visibility:      {visibility / 1000} km") # Convert meters to kilometers
-    print("-" * 30)
-
-except requests.exceptions.HTTPError as errh:
-    print(f"Http Error: {errh}")
-
-except requests.exceptions.ConnectionError as errc:
-    print(f"Error Connecting: {errc}")
-
-except requests.exceptions.Timeout as errt:
-    print(f"Timeout Error: {errt}")
-
-except requests.exceptions.RequestException as err:
-    print(f"Oops: Something Else: {err}")
-    
-except KeyError:
-    print("Could not find weather data for that city. Please check the spelling.")
+root.mainloop()
